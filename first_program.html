@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>Three.js Funsies</title>
+<script
+src="./three.min.js"></script>
+<style>
+body{
+/* set margin to 0 and overflow to hidden, 
+to use the complete page */
+
+margin: 0;
+overflow: hidden;
+}
+</style>
+</head>
+<body>
+
+
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+	var t3 = THREE;
+
+	var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
+    camera.position.set(20, 20, 50);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    var scene = new THREE.Scene();
+    renderer.setClearColor(0xffffff, 1);
+	
+	var light = new THREE.PointLight( 0xffffff, 1, 300 );
+	light.position.set( 20, 20, 50 );
+	scene.add( light );
+
+
+    var material = new THREE.LineBasicMaterial({
+        color: 0x0000ff
+    });
+
+    var g = new THREE.Geometry();
+    r = 10
+
+    add_spoke(g, r, 0, 0);
+    add_spoke(g, -r, 0, 0);
+    add_spoke(g, 0, r, 0);
+    add_spoke(g, 0, -r, 0);
+    add_spoke(g, 0, 0, r);
+    add_spoke(g, 0, 0, -r);
+
+    var line = new THREE.Line(g, material);
+
+    scene.add(line);
+
+    var s_geometry = new THREE.SphereGeometry( r / 2, 32, 32 );
+	var s_material = new THREE.MeshLambertMaterial( {color: 0xcc66ff} );
+	var sphere = new THREE.Mesh( s_geometry, s_material );
+	scene.add( sphere );
+    // renderer.render(scene, camera);
+
+
+    function add_spoke(geometry, x, y, z) {
+		geometry.vertices.push(new THREE.Vector3(x, y, z));
+		geometry.vertices.push(new THREE.Vector3(0, 0, 0));
+	}
+
+	var theta = 0;
+	var render = function () {
+		requestAnimationFrame( render );
+
+		theta += 0.05;
+		camera.position.x = 2 * r * Math.cos(theta);
+		camera.position.y = 2 * r * Math.sin(theta);
+
+		camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+		renderer.render(scene, camera);
+	};
+
+	render();
+	// var theta = 0;
+	// return function () {
+	// 	theta += 0.1;
+	// 	camera.position.x = 2 * r * Math.cos(theta);
+	// 	camera.position.y = 2 * r * Math.sin(theta); 
+	// }
+
+
+
+
+	// var light = new t3.PointLight();
+	// light.position.set(2, 1, 1);
+	// scene.add(light);
+
+	// var makeCube = function (x, y, z) {
+	// 	var cube = new t3.Mesh(
+	// 		new t3.BoxGeometry(1, 1.1, 1),
+	// 		new t3.MeshLambertMaterial(
+	// 			{color: 'red'})
+	// 	);
+	// 	cube.position.set(0, 0, 0).add(
+	// 	new t3.Vector3(x, y, z));
+	// 	scene.add(cube);
+	// 	return cube;
+	// };
+
+	// var cubes = []
+	// for (var i = 0; i < 3; i ++) {
+	// 	cubes[i] = makeCube(0, 1 + 1.2 * i, 3);
+	// }
+	// var k = 0;
+	// return function () {
+	// 	k += -0.02;
+	// 	for (var i = 0; i < cubes.length; i++) {
+	// 		cubes[i].rotation.y = k;
+	// 		cubes[i].position.z += 0.05
+	// 	}
+	// };
+
+</script>
+</body>
+</html>
