@@ -27,44 +27,70 @@ overflow: hidden;
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-    camera.position.set(20, 20, 50);
+    camera.position.set(50, -50, 50);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     var scene = new THREE.Scene();
     renderer.setClearColor(0xffffff, 1);
 	
-	var light = new THREE.PointLight( 0xffffff, 1, 300 );
-	light.position.set( 20, 20, 50 );
+	var light = new THREE.PointLight( 0xffffff, 1, 400 );
+	light.position.set( 10, 10, 80 );
 	scene.add( light );
 
+	make_axes(scene, 10, -10, -10, 0);
+	make_sphere(scene, 5, -10, -10, 0);
 
-    var material = new THREE.LineBasicMaterial({
-        color: 0x0000ff
-    });
+	scene.add(make_curve())
 
-    var g = new THREE.Geometry();
-    r = 10
+	make_axes(scene, 10, 10, 10, 0);
+	make_sphere(scene, 5, 10, 10, 0);
 
-    add_spoke(g, r, 0, 0);
-    add_spoke(g, -r, 0, 0);
-    add_spoke(g, 0, r, 0);
-    add_spoke(g, 0, -r, 0);
-    add_spoke(g, 0, 0, r);
-    add_spoke(g, 0, 0, -r);
+	function make_curve() {
+		var curve = new THREE.QuadraticBezierCurve(
+		new THREE.Vector3(-10, -10, 0),
+		new THREE.Vector3(0, 0, 50),
+		new THREE.Vector3(10, 10, 0)
+		);
 
-    var line = new THREE.Line(g, material);
+		var path = new THREE.Path( curve.getPoints( 50 ) );
 
-    scene.add(line);
+		var geometry = path.createPointsGeometry( 50 );
+		var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
 
-    var s_geometry = new THREE.SphereGeometry( r / 2, 32, 32 );
-	var s_material = new THREE.MeshLambertMaterial( {color: 0xcc66ff} );
-	var sphere = new THREE.Mesh( s_geometry, s_material );
-	scene.add( sphere );
+		//Create the final Object3d to add to the scene
+		// var curveObject = new THREE.Line( geometry, material );
+		return new THREE.Line(geometry, material);
+	}
+
+	function make_sphere(s, r, x0, y0, z0) {
+		var s_geometry = new THREE.SphereGeometry( 5, 32, 32 );
+		var s_material = new THREE.MeshLambertMaterial( {color: 0xcc66ff} );
+		var sphere = new THREE.Mesh( s_geometry, s_material );
+		sphere.position.set(x0, y0, z0);
+		s.add( sphere );
+	}
     // renderer.render(scene, camera);
+    function make_axes(s, r, x0, y0, z0) {
+    	var g = new THREE.Geometry();
 
+    	var material = new THREE.LineBasicMaterial({
+	        color: 0x0000ff
+	    });
 
-    function add_spoke(geometry, x, y, z) {
+	    var line = new THREE.Line(g, material);
+
+    	add_spoke(g, x0 + r, y0, z0, x0, y0, z0);
+	    add_spoke(g, x0 - r, y0, z0, x0, y0, z0);
+	    add_spoke(g, x0, y0 + r, z0, x0, y0, z0);
+	    add_spoke(g, x0, y0 - r, z0, x0, y0, z0);
+	    add_spoke(g, x0, y0, z0 + r, x0, y0, z0);
+	    add_spoke(g, x0, y0, z0 - r, x0, y0, z0);
+
+	    s.add(line);
+    }
+
+    function add_spoke(geometry, x, y, z, x0, y0, z0) {
 		geometry.vertices.push(new THREE.Vector3(x, y, z));
-		geometry.vertices.push(new THREE.Vector3(0, 0, 0));
+		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
 	}
 
 	var theta = 0;
@@ -72,10 +98,10 @@ overflow: hidden;
 		requestAnimationFrame( render );
 
 		theta += 0.05;
-		camera.position.x = 2 * r * Math.cos(theta);
-		camera.position.y = 2 * r * Math.sin(theta);
+		// camera.position.x = 2 * 10 * Math.cos(theta);
+		// camera.position.y = 2 * 10 * Math.sin(theta);
 
-		camera.lookAt(new THREE.Vector3(0, 0, 0));
+		// camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 		renderer.render(scene, camera);
 	};
