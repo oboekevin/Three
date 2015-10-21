@@ -27,7 +27,8 @@ overflow: hidden;
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-    camera.position.set(50, -50, 50);
+    camera.position.set(50, -50, 40);
+    camera.up = new THREE.Vector3(0,0,1);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     var scene = new THREE.Scene();
     renderer.setClearColor(0xffffff, 1);
@@ -36,21 +37,25 @@ overflow: hidden;
 	light.position.set( 10, 10, 80 );
 	scene.add( light );
 
-	charge1 = new PointCharge(scene, -10, -10, 0, 5, 10);
-	charge2 = new PointCharge(scene, 10, 10, 0, 5, 10);
+	charge_list = []
+	charge_list.push(new PointCharge(scene, -10, -10, 0, 2, -10));
+	charge_list.push(new PointCharge(scene, 10, 10, 0, 2, 10));
+	charge_list.push(new PointCharge(scene, -10, -10, 20, 2, 10));
+	charge_list.push(new PointCharge(scene, -10, -10, -20, 2, 10));
+	charge_list.push(new PointCharge(scene, -20, -20, 3, 2, -5));
 	// scene.add(make_curve())
 
 	// make_arrow(scene, new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0), 10);
 
-	make_electric_field(scene, [charge1, charge2]);
+	make_electric_field(scene, charge_list);
 
 	// scene.add(new THREE.Mesh(new THREE.TetrahedronGeometry(4, 0), new THREE.MeshLambertMaterial({color: 0xff66cc})))
 
 	function make_electric_field(s, charges) {
 		var k = 1;
-		for (x = -15; x <= 15; x += 5) {
-			for (y = -15; y <= 15; y += 5) {
-				for (z = -5; z <= 10; z += 5) {
+		for (x = -30; x <= 30; x += 5) {
+			for (y = -30; y <= 30; y += 5) {
+				for (z = -15; z <= 15; z += 5) {
 					var pos = new THREE.Vector3(x, y, z);
 					var net_field = new THREE.Vector3(0, 0, 0);
 					// console.log(net_field)
@@ -62,25 +67,25 @@ overflow: hidden;
 						var e = k * charges[i].charge / mag_r / mag_r / mag_r;
 						r.multiplyScalar(e);
 						net_field.add(r);
-						console.log(net_field)
+						// console.log(net_field)
 					}
 					var e = net_field.length();
 					net_field.normalize();
 					// console.log("magnitude: " + e);
 					// console.log("direction: " + net_field);
-					make_arrow(s, pos, net_field, e * 17);
+					make_arrow(s, pos, net_field, e * 17, e);
 				}
 			}
 		}
 	}
 
-	function make_arrow(s, origin, dir, length) {
+	function make_arrow(s, origin, dir, length, hex) {
 		// var dir = new THREE.Vector3( 1, 0, 0 );
 		// var origin = new THREE.Vector3( 0, 0, 0 );
 		// var length = 10;
-		var hex = 0x000000;
+		// var hex = 0x000000;
 
-		var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex, length / 3, length / 2);
+		var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex, length / 3, length / 3);
 		s.add( arrowHelper );
 	}
 
@@ -92,8 +97,9 @@ overflow: hidden;
 		this.vec = new THREE.Vector3(x0, y0, z0);
 		this.radius = r
 		this.charge = q
-		make_axes(scene, r * 2, x0, y0, z0);
-		make_sphere(scene, r, x0, y0, z0);
+		// make_axes(scene, r * 2, x0, y0, z0);
+		this.hex = (q < 0) ? 0x0000ff : 0xff0000;
+		make_sphere(scene, r, x0, y0, z0, this.hex);
 	}
 
 	function make_curve() {
@@ -114,9 +120,9 @@ overflow: hidden;
 		return new THREE.Line(geometry, material);
 	}
 
-	function make_sphere(s, r, x0, y0, z0) {
-		var s_geometry = new THREE.SphereGeometry( 5, 32, 32 );
-		var s_material = new THREE.MeshLambertMaterial( {color: 0xcc66ff} );
+	function make_sphere(s, r, x0, y0, z0, hex) {
+		var s_geometry = new THREE.SphereGeometry( r, 32, 32 );
+		var s_material = new THREE.MeshLambertMaterial( {color: hex} );
 		var sphere = new THREE.Mesh( s_geometry, s_material );
 		sphere.position.set(x0, y0, z0);
 		s.add( sphere );
@@ -150,15 +156,17 @@ overflow: hidden;
 	var render = function () {
 		requestAnimationFrame( render );
 
-		theta += 0.05;
-		camera.position.x = 100 * Math.cos(theta);
-		camera.position.y = 100 * Math.sin(theta);
+		theta += 0.02;
+		camera.position.y = 50 * Math.cos(theta);
+		camera.position.x = 50 * Math.sin(theta);
 
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-		console.log(camera.rotation)
-		camera.rotation.z = 0.5;
-		console.log(camera.rotation)
+		// console.log(camera.rotation)
+		// // camera.rotation.x = theta;
+		// // camera.rotation.y = 0;
+		// // camera.rotation.z = theta + 0.5;
+		// console.log(camera.rotation)
 
 		renderer.render(scene, camera);
 	};
