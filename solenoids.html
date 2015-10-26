@@ -53,9 +53,15 @@ overflow: hidden;
 
 	make_solenoid(scene, 5, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1), 10);
 
+
 	function make_solenoid(s, r, origin, dir, length) { 
+		this.radius = r; 
+		this.origin = origin; 
+		this.dir = dir; 
+		this.length = length;
+
 		var alpha = 0.05;
-		var beta = 2;
+		var beta = 0.09;
 
 		var normal = dir.clone();
 		var temp = new THREE.Vector3(0, 0, 0);
@@ -69,10 +75,13 @@ overflow: hidden;
 		perp2.crossVectors(normal, perp1);
 		perp2.normalize();
 		console.log(normal); console.log(perp1); console.log(perp2);
-		 
+		
+		this.perp1 = perp1;
+		this.perp2 = perp2;
+
 		var pi=3.14;
 		 
-		var circle_vertices=100; //choose what you want
+		var circle_vertices=200; //choose what you want
 		var circle_vertex = new Array(circle_vertices);
 
 		//
@@ -82,6 +91,16 @@ overflow: hidden;
 	    });
 	    var line = new THREE.Line(g, material);
 	    //
+
+	    var points = new Array();
+	    for (ra = 0; ra < 2 * r; ra++) {
+	    	for (theta = 0; theta < 2 * pi; theta += pi / 6) {
+	    		for (z = 0; z < length; z++) {
+	    			points.push(new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z));
+	    		}
+	    	}
+	    } 
+
 		for (step = 0; step < circle_vertices; ++step)
 		{
 		    var angle = step * pi * 2 * alpha;
@@ -92,9 +111,13 @@ overflow: hidden;
 		    v2.multiplyScalar(r * Math.cos(angle));
 		    v3 = dir.clone();
 		    v3.multiplyScalar(step * beta);
-		    v1.add(v2); // v1.add(v3);
+		    v1.add(v2);  v1.add(v3);
 		    g.vertices.push(v1);
-		}
+
+		    // so v1 is the position of this vector
+		    // now I need the electric field caused by this point
+		    // 
+
 		// https://www.opengl.org/discussion_boards/showthread.php/124624-equation-of-a-circle-in-3D
 		s.add(line);
 	}
