@@ -32,6 +32,8 @@ overflow: hidden;
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     var scene = new THREE.Scene();
     renderer.setClearColor(0xffffff, 1);
+
+    // renderer = new THREE.OculusRiftEffect(renderer,	{worldScale: 100}); //		_self.resizeCanvas();
 	
 	var light = new THREE.PointLight( 0xffffff, 1, 400 );
 	light.position.set( 10, 10, 80 );
@@ -45,7 +47,7 @@ overflow: hidden;
 	// charge_list.push(new PointCharge(scene, -20, -20, 3, 2, -5));
 	// scene.add(make_curve())
 
-	make_arrow(scene, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1), 10);
+	// make_arrow(scene, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1), 10);
 
 	// make_electric_field(scene, charge_list);
 
@@ -59,6 +61,7 @@ overflow: hidden;
 		this.origin = origin; 
 		this.dir = dir; 
 		this.length = length;
+		this.charge_density = 1;
 
 		var alpha = 0.05;
 		var beta = 0.09;
@@ -93,32 +96,60 @@ overflow: hidden;
 	    //
 
 	    var points = new Array();
-	    for (ra = 0; ra < 2 * r; ra++) {
-	    	for (theta = 0; theta < 2 * pi; theta += pi / 6) {
-	    		for (z = 0; z < length; z++) {
-	    			points.push(new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z));
+	    for (ra = 0; ra < 2 * this.radius; ra += 3) {
+	    	for (theta = 0; theta < 2 * pi; theta += pi / 3) {
+	    		for (z = 0; z < length * 1.5; z += 2) {
+	    			var point = new THREE.Vector3(ra * Math.cos(theta), ra * Math.sin(theta), z)
+	    			points.push(point);
+	    			// make_arrow(s, point, new THREE.Vector3(0, 0, 1), 1, 0xff0000)
 	    		}
 	    	}
-	    } 
+	    }
+
+	    var field = new Array(points.length) // parallel array
+	    for (i = 0; i < field.length; i++) {
+	    	field[i] = new THREE.Vector3(0, 0, 0);
+	    }
 
 		for (step = 0; step < circle_vertices; ++step)
 		{
 		    var angle = step * pi * 2 * alpha;
-		    // circle_vertex[step] = 
 		    v1 = perp1.clone()
-		    v1.multiplyScalar(r * Math.sin(angle));
+		    v1.multiplyScalar(this.radius * Math.sin(angle));
 		    v2 = perp2.clone()
-		    v2.multiplyScalar(r * Math.cos(angle));
+		    v2.multiplyScalar(this.radius * Math.cos(angle));
 		    v3 = dir.clone();
 		    v3.multiplyScalar(step * beta);
-		    v1.add(v2);  v1.add(v3);
+		    v1.add(v2);  // v1.add(v3);
 		    g.vertices.push(v1);
-
 		    // so v1 is the position of this vector
 		    // now I need the electric field caused by this point
-		    // 
-
+			var d_length = 1;
+			var k = 1;
+			for (i = 0; i < points.length; i++) {
+				var r = new THREE.Vector3();
+				// console.log(r);
+				console.log(points[i], v1);
+				r.subVectors(points[i], v1);
+				// console.log(r);
+				var mag_r = r.length();
+				// console.log(mag_r);
+				var e = k * this.charge_density * d_length / mag_r / mag_r / mag_r;
+				r.multiplyScalar(e);
+				// console.log(e);
+				field[i].add(r);
+			}
+		}
 		// https://www.opengl.org/discussion_boards/showthread.php/124624-equation-of-a-circle-in-3D
+		console.log(field.length)
+		console.log(points.length)
+		console.log(s)
+		for (i = 0; i < field.length; i++) {
+			var e = field[i].length();
+			field[i].normalize();
+			// console.log(e, field[i])
+			make_arrow(s, points[i], field[i], e, 0x00cc00);
+		}
 		s.add(line);
 	}
 
@@ -227,17 +258,17 @@ overflow: hidden;
 	var render = function () {
 		requestAnimationFrame( render );
 
-		// theta += 0.02;
-		// camera.position.y = 50 * Math.cos(theta);
-		// camera.position.x = 50 * Math.sin(theta);
+		theta += 0.02;
+		camera.position.y = 50 * Math.cos(theta);
+		camera.position.x = 50 * Math.sin(theta);
 
-		// camera.lookAt(new THREE.Vector3(0, 0, 0));
+		camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-		// console.log(camera.rotation)
-		// // camera.rotation.x = theta;
-		// // camera.rotation.y = 0;
-		// // camera.rotation.z = theta + 0.5;
-		// console.log(camera.rotation)
+		console.log(camera.rotation)
+		// camera.rotation.x = theta;
+		// camera.rotation.y = 0;
+		// camera.rotation.z = theta + 0.5;
+		console.log(camera.rotation)
 
 		renderer.render(scene, camera);
 	};
