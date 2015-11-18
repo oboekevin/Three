@@ -4,22 +4,37 @@
 
 <head>
 <title>Three.js Funsies</title>
-<script
-src="./three.min.js"></script>
+<script src="./three.min.js"></script>
+<script src="./OculusBridge.min.js"></script>
 <style>
-body{
-/* set margin to 0 and overflow to hidden, 
-to use the complete page */
+	body{
+		margin: 0;
+		overflow: hidden;
+	}
+	/*Following code adapted from http://instrument.github.io/oculus-bridge/examples/connect.html */
+	#stats{
+		position:absolute;
+		top:20px;
+		left:20px;
+		color: #000000;
+		background-color: #FFFFFF; 
+	}
 
-margin: 0;
-overflow: hidden;
-}
+	#stats div {
+		margin-bottom:5px;
+	}
+
+	#stats div label {
+		display:inline-block;
+		width:200px;
+	}
 </style>
 </head>
 <body>
 
+	<div id="stats"></div>
+    <div id="viewport"></div>
 
-<!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
 	var t3 = THREE;
 
@@ -41,6 +56,99 @@ overflow: hidden;
 
 	make_solenoid(scene, 5, new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1), 10);
 
+	//****************************************************//
+	// code from http://instrument.github.io/oculus-bridge/examples/connect.html
+	// using pieces of https://github.com/Instrument/oculus-bridge
+	var accelerationIndicator;
+	function createAccelerometerUI(){
+
+		// build a grid for scale
+		var material = new THREE.LineBasicMaterial({ color: 0x515151 });
+
+		var geometry = new THREE.Geometry();
+		for(var i = -10; i < 11; i+=2){
+			geometry.vertices.push( new THREE.Vector3( i*10, 0, -100 ) );
+			geometry.vertices.push( new THREE.Vector3( i*10, 30, -100 ) );
+		}
+
+		geometry.vertices.push( new THREE.Vector3( -100, 10, -100 ) );
+		geometry.vertices.push( new THREE.Vector3( 100, 10, -100 ) );
+
+		geometry.vertices.push( new THREE.Vector3( -100, 20, -100 ) );
+		geometry.vertices.push( new THREE.Vector3( 100, 20, -100 ) );
+
+		var line = new THREE.Line( geometry, material, THREE.LinePieces );
+		scene.add( line );
+
+		// add indicators for accelerometer values
+		var accelerationValues = [
+			new THREE.Mesh( new THREE.CubeGeometry(1,10,1), new THREE.MeshLambertMaterial({color:0xff0000, emissive:0x600000}) ),
+			new THREE.Mesh( new THREE.CubeGeometry(1,10,1), new THREE.MeshLambertMaterial({color:0x00ff00, emissive:0x006000}) ),
+			new THREE.Mesh( new THREE.CubeGeometry(1,10,1), new THREE.MeshLambertMaterial({color:0x0000ff, emissive:0x000060}) )
+		];
+
+		accelerationIndicator = new THREE.Object3D();
+		accelerationIndicator.position.set(0,5,-100);
+		for(var i = 0; i < accelerationValues.length; i++){
+			accelerationValues[i].position.set(0, i*10, 0);
+			accelerationIndicator.add(accelerationValues[i]);
+		}
+		scene.add(accelerationIndicator);
+	}
+
+	function bridgeConfigUpdated(config){
+		var stats = document.getElementById("stats");
+
+		stats.innerHTML = "Display Configuration<hr>";
+
+		// Show all the parameters in the config object.
+		for(var itm in config){
+			var row = document.createElement("div");
+			var label = document.createElement("label");
+			var value = document.createElement("span");
+
+			label.innerHTML = itm;
+			value.innerHTML = config[itm];
+
+			row.appendChild(label);
+			row.appendChild(value);
+			stats.appendChild(row);
+		}
+	}
+
+
+	function bridgeAccelerationUpdated(accel) {
+		// scale values so 1g = 20 world units
+		accelerationIndicator.children[0].position.x = (accel.x * 1.02040816326531) * 2;
+		accelerationIndicator.children[1].position.x = (accel.y * 1.02040816326531) * 2;
+		accelerationIndicator.children[2].position.x = (accel.z * 1.02040816326531) * 2;
+	}
+
+	function bridgeOrientationUpdated(quat) {
+		referenceCube.quaternion.set(quat.x, quat.y, quat.z, quat.w);
+	}
+
+	function bridgeConnected(){
+		var stats = document.getElementById("stats");
+		stats.innerHTML = "Bridge Connected!";
+		document.getElementById("logo").className = "";
+	}
+
+	function bridgeDisconnected(){
+		var stats = document.getElementById("stats");
+		stats.innerHTML = "Bridge Disconnected.";
+		document.getElementById("logo").className = "offline"
+	}
+
+	oculusBridge = new OculusBridge({
+		onOrientationUpdate  : bridgeOrientationUpdated,
+		onAccelerationUpdate : bridgeAccelerationUpdated,
+		onConfigUpdate       : bridgeConfigUpdated,
+		onConnect            : bridgeConnected,
+		onDisconnect         : bridgeDisconnected
+	});
+	oculusBridge.connect();
+	//****************************************************//
 
 	function make_solenoid(s, r, origin, dir, length) { 
 		this.radius = r; 
