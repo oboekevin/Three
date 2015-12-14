@@ -4,52 +4,143 @@
 
 <head>
 <title>Three.js Funsies</title>
-<script
-src="./three.min.js"></script>
+	<script src="three.min.js"></script>
+	<script src="three/examples/js/effects/VREffect.js"></script>
+	<script src="three/examples/js/controls/VRControls.js"></script>
+	<script src="three/examples/js/libs/stats.min.js"></script>
 <style>
 body{
-/* set margin to 0 and overflow to hidden, 
-to use the complete page */
+	/* set margin to 0 and overflow to hidden, 
+	to use the complete page */
+	margin: 0;
+	overflow: hidden;
+}
+.menu {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+}
 
-margin: 0;
-overflow: hidden;
+.button {
+	display: inline-block;
+	padding: 8px;
+	color: #FFF;
+	background-color: #555;
+}
+
+.button.enabled {
+	background-color: rgb(18, 36, 70);
+}
+
+.button:hover {
+	cursor: pointer;
+	background-color: rgb(18, 36, 70);
+}
+
+.button.error {
+	pointer-events: none;
+	background-color: red;
 }
 </style>
 </head>
 <body>
 
+	<div class="menu">
+		<div class="button full-screen">Start VR Mode</div>
+	</div>
+
 
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
-	var t3 = THREE;
+	var t3, camera, scene, renderer;
+	var raycaster, container, stats, vrEffect, vrControls;
+	var crosshair, INTERSECTED;
+	var theta = 0;
+	init();
+	animate();
 
-	var renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-    var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-    camera.position.set(50, -50, 40);
-    camera.up = new THREE.Vector3(0,0,1);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
-    var scene = new THREE.Scene();
-    renderer.setClearColor(0xffffff, 1);
-	
-	var light = new THREE.PointLight( 0xffffff, 1, 400 );
-	light.position.set( 10, 10, 80 );
-	scene.add( light );
+	function init() {
+		container = document.createElement( 'div' );
+		document.body.appendChild( container );
 
-	charge_list = []
-	charge_list.push(new PointCharge(scene, -10, -10, 0, 2, -10));
-	charge_list.push(new PointCharge(scene, 10, 10, 0, 2, 10));
-	charge_list.push(new PointCharge(scene, -10, -10, 20, 2, 10));
-	charge_list.push(new PointCharge(scene, -10, -10, -20, 2, 10));
-	charge_list.push(new PointCharge(scene, -20, -20, 3, 2, -5));
-	// scene.add(make_curve())
+		var info = document.createElement( 'div' );
+		info.style.position = 'absolute';
+		info.style.top = '10px';
+		info.style.width = '100%';
+		info.style.textAlign = 'center';
+		info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> - electric point charges';
+		container.appendChild( info );
 
-	// make_arrow(scene, new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0), 10);
+		var t3 = THREE;
 
-	make_electric_field(scene, charge_list);
+		renderer = new THREE.WebGLRenderer( { antialias: true } );
+		renderer.setPixelRatio( window.devicePixelRatio );
+	    renderer.setSize(window.innerWidth, window.innerHeight);
+	    renderer.setClearColor(0xffffff, 1);
+	    container.appendChild(renderer.domElement);
 
-	// scene.add(new THREE.Mesh(new THREE.TetrahedronGeometry(4, 0), new THREE.MeshLambertMaterial({color: 0xff66cc})))
+	    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
+	    camera.position.set(50, -50, 40);
+	    camera.up = new THREE.Vector3(0,0,1);
+	    camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+	    scene = new THREE.Scene();
+		
+		var light = new THREE.PointLight( 0xffffff, 1, 400 );
+		light.position.set( 10, 10, 80 );
+		scene.add( light );
+
+		crosshair = new THREE.Mesh(
+			new THREE.RingGeometry( 0.5, 1, 32 ),
+			new THREE.MeshBasicMaterial( {
+				color: 0x00bb00,
+				transparent: true,
+				opacity: 0.5
+			} )
+		);
+		scene.add( crosshair );
+
+		raycaster = new THREE.Raycaster();
+
+		charge_list = [];
+		charge_list.push(new PointCharge(scene, -10, -10, 0, 2, -10));
+		charge_list.push(new PointCharge(scene, 10, 10, 0, 2, 10));
+		charge_list.push(new PointCharge(scene, -10, -10, 20, 2, 10));
+		charge_list.push(new PointCharge(scene, -10, -10, -20, 2, 10));
+		charge_list.push(new PointCharge(scene, -20, -20, 3, 2, -5));
+
+		make_electric_field(scene, charge_list);
+
+		var fullScreenButton = document.querySelector( '.full-screen' );
+
+		if ( navigator.getVRDevices === undefined ) {
+			fullScreenButton.innerHTML = 'Your browser doesn\'t support WebVR';
+			fullScreenButton.classList.add('error');
+		}
+
+		vrControls = new THREE.VRControls( camera );
+		vrEffect = new THREE.VREffect( renderer, function ( error ) {
+			fullScreenButton.innerHTML = error;
+			fullScreenButton.classList.add('error');
+		} );
+
+		fullScreenButton.onclick = function() {
+			vrEffect.setFullScreen( true );
+		};
+
+		stats = new Stats();
+		stats.domElement.style.position = 'absolute';
+		stats.domElement.style.top = '0px';
+		container.appendChild( stats.domElement );
+
+		window.addEventListener( 'resize', onWindowResize, false );
+	}
+
+	function onWindowResize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		vrEffect.setSize( window.innerWidth, window.innerHeight );
+	}
 
 	function make_electric_field(s, charges) {
 		var k = 1;
@@ -152,64 +243,47 @@ overflow: hidden;
 		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
 	}
 
-	var theta = 0;
-	var render = function () {
-		requestAnimationFrame( render );
+	function animate() {
+		requestAnimationFrame( animate );
 
-		theta += 0.02;
+		render();
+	}
+
+	function render() {
+		theta += 0.01;
 		camera.position.y = 50 * Math.cos(theta);
 		camera.position.x = 50 * Math.sin(theta);
-
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
-
-		// console.log(camera.rotation)
-		// // camera.rotation.x = theta;
-		// // camera.rotation.y = 0;
-		// // camera.rotation.z = theta + 0.5;
-		// console.log(camera.rotation)
-
 		renderer.render(scene, camera);
+
+
+		// raycaster.setFromCamera( { x: 0, y: 0 }, camera );
+		// var intersects = raycaster.intersectObjects( cubes );
+		// if ( intersects.length > 0 ) {
+		// 	if ( INTERSECTED != intersects[ 0 ].object ) {
+		// 		if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+		// 		INTERSECTED = intersects[ 0 ].object;
+		// 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+		// 		INTERSECTED.material.emissive.setHex( 0xff0000 );
+		// 	}
+		// } else {
+		// 	if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+		// 	INTERSECTED = null;
+		// }
+		// vrControls.update();
+		// crosshair.quaternion.copy( camera.quaternion );
+		// crosshair.position.set( 0, 0, 0 );
+		// if ( INTERSECTED ) {
+		// 	crosshair.translateZ(
+		// 		-scene.position.distanceTo( INTERSECTED.position ) +
+		// 		INTERSECTED.geometry.boundingSphere.radius + 5
+		// 	);
+		// }
+		// else {
+		// 	crosshair.translateZ(-40);
+		// }
+		vrEffect.render( scene, camera );
 	};
-
-	render();
-	// var theta = 0;
-	// return function () {
-	// 	theta += 0.1;
-	// 	camera.position.x = 2 * r * Math.cos(theta);
-	// 	camera.position.y = 2 * r * Math.sin(theta); 
-	// }
-
-
-
-
-	// var light = new t3.PointLight();
-	// light.position.set(2, 1, 1);
-	// scene.add(light);
-
-	// var makeCube = function (x, y, z) {
-	// 	var cube = new t3.Mesh(
-	// 		new t3.BoxGeometry(1, 1.1, 1),
-	// 		new t3.MeshLambertMaterial(
-	// 			{color: 'red'})
-	// 	);
-	// 	cube.position.set(0, 0, 0).add(
-	// 	new t3.Vector3(x, y, z));
-	// 	scene.add(cube);
-	// 	return cube;
-	// };
-
-	// var cubes = []
-	// for (var i = 0; i < 3; i ++) {
-	// 	cubes[i] = makeCube(0, 1 + 1.2 * i, 3);
-	// }
-	// var k = 0;
-	// return function () {
-	// 	k += -0.02;
-	// 	for (var i = 0; i < cubes.length; i++) {
-	// 		cubes[i].rotation.y = k;
-	// 		cubes[i].position.z += 0.05
-	// 	}
-	// };
 
 </script>
 </body>

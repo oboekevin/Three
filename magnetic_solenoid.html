@@ -42,7 +42,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-    camera.position.set(50, -50, 30);
+    camera.position.set(30, -30, 30);
     camera.up = new THREE.Vector3(0,0,1);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     var scene = new THREE.Scene();
@@ -205,6 +205,8 @@
 	    	field[i] = new THREE.Vector3(0, 0, 0);
 	    }
 
+	    make_arrow(s, origin, dir, length);
+
 		for (step = 0; step < circle_vertices; ++step)
 		{
 		    var angle = step * pi * 2 * alpha;
@@ -255,7 +257,7 @@
 			var e = field[i].length();
 			field[i].normalize();
 			// console.log(e, field[i])
-			make_arrow(s, points[i], field[i], e, 0x00cc00);
+			// make_arrow(s, points[i], field[i], e, 0x00cc00);
 		}
 		s.add(line);
 	}
@@ -299,7 +301,7 @@
 	var render = function () {
 		requestAnimationFrame( render );
 
-		theta += 0.02;
+		// theta += 0.02;
 		camera.position.y = 30 * Math.cos(theta);
 		camera.position.x = 30 * Math.sin(theta);
 
