@@ -56,6 +56,7 @@ body{
 	var raycaster, container, stats, vrEffect, vrControls;
 	var crosshair, INTERSECTED;
 	var theta = 0;
+	var camera_radius = 30;
 	init();
 	animate();
 
@@ -80,7 +81,7 @@ body{
 	    container.appendChild(renderer.domElement);
 
 	    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 500);
-	    camera.position.set(50, -50, 40);
+	    camera.position.set(camera_radius, 0, camera_radius);
 	    camera.up = new THREE.Vector3(0,0,1);
 	    camera.lookAt(new THREE.Vector3(0, 0, 0));
 
@@ -103,11 +104,11 @@ body{
 		raycaster = new THREE.Raycaster();
 
 		charge_list = [];
-		charge_list.push(new PointCharge(scene, -10, -10, 0, 2, -10));
-		charge_list.push(new PointCharge(scene, 10, 10, 0, 2, 10));
-		charge_list.push(new PointCharge(scene, -10, -10, 20, 2, 10));
-		charge_list.push(new PointCharge(scene, -10, -10, -20, 2, 10));
-		charge_list.push(new PointCharge(scene, -20, -20, 3, 2, -5));
+		charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -10));
+		charge_list.push(new PointCharge(scene, 10, 10, 0, 1, 10));
+		charge_list.push(new PointCharge(scene, -10, -10, 20, 1, 10));
+		charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
+		charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
 
 		make_electric_field(scene, charge_list);
 
@@ -164,20 +165,32 @@ body{
 					net_field.normalize();
 					// console.log("magnitude: " + e);
 					// console.log("direction: " + net_field);
-					make_arrow(s, pos, net_field, e * 17, e);
+					make_arrow(s, pos, net_field, e);
 				}
 			}
 		}
 	}
 
-	function make_arrow(s, origin, dir, length, hex) {
-		// var dir = new THREE.Vector3( 1, 0, 0 );
-		// var origin = new THREE.Vector3( 0, 0, 0 );
-		// var length = 10;
-		// var hex = 0x000000;
+	function make_arrow(s, origin, dir, magnitude) {
+		// center of arrow on origin
+		var length = magnitude * 17;
+		var hex = 0x000000;
+		var arrow_length = 2;
 
-		var arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex, length / 3, length / 3);
+		var halfway_back = new THREE.Vector3();
+		halfway_back.copy(dir);
+		halfway_back.multiplyScalar(arrow_length / 2);
+		halfway_back.negate();
+
+		 var new_orig = new THREE.Vector3();
+		 new_orig.subVectors(origin, halfway_back);
+
+		var arrowHelper = new THREE.ArrowHelper( dir, new_orig, arrow_length, hex, arrow_length / 2, magnitude * 5);
+		// arrowHelper.cone
+		// arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex, length / 3, length / 3);
+
 		s.add( arrowHelper );
+		
 	}
 
 	function PointCharge(s, x0, y0, z0, r, q) {
@@ -186,8 +199,8 @@ body{
 		this.y0 = y0;
 		this.z0 = z0;
 		this.vec = new THREE.Vector3(x0, y0, z0);
-		this.radius = r
-		this.charge = q
+		this.radius = r;
+		this.charge = q;
 		// make_axes(scene, r * 2, x0, y0, z0);
 		this.hex = (q < 0) ? 0x0000ff : 0xff0000;
 		make_sphere(scene, r, x0, y0, z0, this.hex);
@@ -251,8 +264,8 @@ body{
 
 	function render() {
 		theta += 0.01;
-		camera.position.y = 50 * Math.cos(theta);
-		camera.position.x = 50 * Math.sin(theta);
+		camera.position.y = camera_radius * Math.cos(theta);
+		camera.position.x = camera_radius * Math.sin(theta);
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 		renderer.render(scene, camera);
 
