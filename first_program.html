@@ -256,6 +256,27 @@ body{
 		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
 	}
 
+	window.addEventListener('keydown', key_listener, false);
+	function key_listener() {
+		// 
+	}
+	//----- Camera Functions -----//
+	function look_left() {
+		// 
+	}
+	function look_right() {
+		//
+	}
+	function zoom_in() {
+		//
+	}
+	function zoom_out() {
+		//
+	}
+	function pick_charge() {
+		//
+	}
+
 	function animate() {
 		requestAnimationFrame( animate );
 
@@ -263,11 +284,13 @@ body{
 	}
 
 	function render() {
-		theta += 0.01;
-		camera.position.y = camera_radius * Math.cos(theta);
-		camera.position.x = camera_radius * Math.sin(theta);
-		camera.lookAt(new THREE.Vector3(0, 0, 0));
-		renderer.render(scene, camera);
+		// theta += 0.01;
+		// camera.position.y = camera_radius * Math.cos(theta);
+		// camera.position.x = camera_radius * Math.sin(theta);
+		// camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
+		// renderer.render(scene, camera);
 
 
 		// raycaster.setFromCamera( { x: 0, y: 0 }, camera );
