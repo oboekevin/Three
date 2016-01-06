@@ -256,22 +256,37 @@ body{
 		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
 	}
 
-	window.addEventListener('keydown', key_listener, false);
-	function key_listener() {
-		// 
+	window.addEventListener('keydown', key_listener, true);
+	function key_listener(event) {
+		console.log(event.keyCode);
+
+		switch(event.keyCode) {
+			case 87: // w
+				zoom_in();
+				break;
+			case 65: // a
+				look_left();
+				break;
+			case 83: // s
+				zoom_out();
+				break;
+			case 68: // d
+				look_right();
+				break;
+		}
 	}
 	//----- Camera Functions -----//
 	function look_left() {
-		// 
+		console.log("L");
 	}
 	function look_right() {
-		//
+		console.log("R");
 	}
 	function zoom_in() {
-		//
+		console.log("IN");
 	}
 	function zoom_out() {
-		//
+		console.log("OUT");
 	}
 	function pick_charge() {
 		//
@@ -284,10 +299,10 @@ body{
 	}
 
 	function render() {
-		// theta += 0.01;
-		// camera.position.y = camera_radius * Math.cos(theta);
-		// camera.position.x = camera_radius * Math.sin(theta);
-		// camera.lookAt(new THREE.Vector3(0, 0, 0));
+		theta += 0.01;
+		camera.position.y = camera_radius * Math.cos(theta);
+		camera.position.x = camera_radius * Math.sin(theta);
+		camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 
 		// renderer.render(scene, camera);
