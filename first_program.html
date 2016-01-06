@@ -91,15 +91,16 @@ body{
 		light.position.set( 10, 10, 80 );
 		scene.add( light );
 
-		crosshair = new THREE.Mesh(
-			new THREE.RingGeometry( 0.5, 1, 32 ),
-			new THREE.MeshBasicMaterial( {
-				color: 0x00bb00,
-				transparent: true,
-				opacity: 0.5
-			} )
-		);
-		scene.add( crosshair );
+		// crosshair = new THREE.Mesh(
+		// 	new THREE.RingGeometry( 0.5, 1, 32 ),
+		// 	new THREE.MeshBasicMaterial( {
+		// 		color: 0x00bb00,
+		// 		transparent: true,
+		// 		opacity: 0.5
+		// 	} )
+		// );
+		crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
+		// scene.add( crosshair );
 
 		raycaster = new THREE.Raycaster();
 
@@ -284,9 +285,15 @@ body{
 	}
 	function zoom_in() {
 		console.log("IN");
+		if (camera_radius > 5 && camera.position.z > 5) {
+			camera_radius -= 5;
+			camera.position.z -= 5;
+		}
 	}
 	function zoom_out() {
 		console.log("OUT");
+		camera_radius += 5;
+		camera.position.z += 5;
 	}
 	function pick_charge() {
 		//
