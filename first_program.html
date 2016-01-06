@@ -3,7 +3,7 @@
 <html>
 
 <head>
-<title>Three.js Funsies</title>
+<title>Point Charges</title>
 	<script src="three.min.js"></script>
 	<script src="three/examples/js/effects/VREffect.js"></script>
 	<script src="three/examples/js/controls/VRControls.js"></script>
@@ -69,7 +69,7 @@ body{
 		info.style.top = '10px';
 		info.style.width = '100%';
 		info.style.textAlign = 'center';
-		info.innerHTML = '<a href="http://threejs.org" target="_blank">three.js</a> - electric point charges';
+		info.innerHTML = 'electric point charges'; // '<a href="http://threejs.org" target="_blank">three.js</a> - electric point charges';
 		container.appendChild( info );
 
 		var t3 = THREE;
@@ -274,6 +274,10 @@ body{
 			case 68: // d
 				look_right();
 				break;
+			case 37: // left arrow
+			case 38: // up arrow
+			case 39: // right arrow
+			case 40: // down arrow
 		}
 	}
 	//----- Camera Functions -----//
