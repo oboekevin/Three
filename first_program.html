@@ -198,6 +198,7 @@ body{
 		this.charge = q;
 		// make_axes(scene, r * 2, x0, y0, z0);
 		this.hex = (q < 0) ? 0x0000ff : 0xff0000;
+		this.sphere = make_sphere(scene, r, x0, y0, z0, this.hex);
 		this.contribute_to_electric_field = function(field) { // where field is a 3d matrix
 			field.forEach(function(F){
 				var r = new THREE.Vector3();
@@ -209,7 +210,6 @@ body{
 				F.field.add(r);
 			});
 		}
-		make_sphere(scene, r, x0, y0, z0, this.hex);
 	}
 
 	function make_sphere(s, r, x0, y0, z0, hex) {
@@ -218,6 +218,7 @@ body{
 		var sphere = new THREE.Mesh( s_geometry, s_material );
 		sphere.position.set(x0, y0, z0);
 		s.add( sphere );
+		return sphere;
 	}
     // renderer.render(scene, camera);
     function make_axes(s, r, x0, y0, z0) {
@@ -301,6 +302,7 @@ body{
 		camera.position.y = camera_radius * Math.cos(theta);
 		camera.position.x = camera_radius * Math.sin(theta);
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
+		charge_list[0].sphere.translateZ(1);
 
 		// renderer.render(scene, camera);
 
