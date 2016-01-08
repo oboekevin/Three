@@ -57,6 +57,7 @@ body{
 	var crosshair, INTERSECTED;
 	var theta = 0;
 	var camera_radius = 30;
+	var K = 1;
 	init();
 	animate();
 
@@ -100,6 +101,7 @@ body{
 		// 	} )
 		// );
 		crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
+		make_axes(scene, 30, 0, 0, 0);
 		// scene.add( crosshair );
 
 		raycaster = new THREE.Raycaster();
@@ -145,31 +147,23 @@ body{
 	}
 
 	function make_electric_field(s, charges) {
-		var k = 1;
+		var field = new Array();
 		for (x = -30; x <= 30; x += 5) {
 			for (y = -30; y <= 30; y += 5) {
 				for (z = -15; z <= 15; z += 5) {
-					var pos = new THREE.Vector3(x, y, z);
-					var net_field = new THREE.Vector3(0, 0, 0);
-					// console.log(net_field)
-					for (i = 0; i < charges.length; i++) {
-						var r = new THREE.Vector3();
-						r.subVectors(pos, charges[i].vec);
-						var mag_r = r.length();
-						// console.log(mag_r)
-						var e = k * charges[i].charge / mag_r / mag_r / mag_r;
-						r.multiplyScalar(e);
-						net_field.add(r);
-						// console.log(net_field)
-					}
-					var e = net_field.length();
-					net_field.normalize();
-					// console.log("magnitude: " + e);
-					// console.log("direction: " + net_field);
-					make_arrow(s, pos, net_field, e);
+					field.push({pos: new THREE.Vector3(x, y, z), field: new THREE.Vector3(0, 0, 0)});
+					// position vector and field strength vector
 				}
 			}
 		}
+		charges.forEach(function(charge) {
+			charge.contribute_to_electric_field(field);
+		});
+		field.forEach(function(F) {
+			mag = F.field.length();
+			dir = F.field.normalize();
+			make_arrow(s, F.pos, dir, mag);
+		});
 	}
 
 	function make_arrow(s, origin, dir, magnitude) {
@@ -204,25 +198,18 @@ body{
 		this.charge = q;
 		// make_axes(scene, r * 2, x0, y0, z0);
 		this.hex = (q < 0) ? 0x0000ff : 0xff0000;
+		this.contribute_to_electric_field = function(field) { // where field is a 3d matrix
+			field.forEach(function(F){
+				var r = new THREE.Vector3();
+				var vec = new THREE.Vector3(x0, y0, z0);
+				r.subVectors(F.pos, vec);
+				var mag_r = r.length();
+				var e = K * q / mag_r / mag_r / mag_r;
+				r.multiplyScalar(e);
+				F.field.add(r);
+			});
+		}
 		make_sphere(scene, r, x0, y0, z0, this.hex);
-	}
-
-	function make_curve() {
-		var curve = new THREE.QuadraticBezierCurve3(
-		new THREE.Vector3(-10, -10, 0),
-		new THREE.Vector3(0, 0, 50),
-		new THREE.Vector3(10, 10, 0)
-		);
-
-		var path = new THREE.Path( curve.getPoints( 50 ) );
-
-		var geometry = path.createPointsGeometry( 50 );
-		geometry.vertices = curve.getPoints(50);
-		var material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
-
-		//Create the final Object3d to add to the scene
-		// var curveObject = new THREE.Line( geometry, material );
-		return new THREE.Line(geometry, material);
 	}
 
 	function make_sphere(s, r, x0, y0, z0, hex) {
@@ -315,35 +302,8 @@ body{
 		camera.position.x = camera_radius * Math.sin(theta);
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-
 		// renderer.render(scene, camera);
 
-
-		// raycaster.setFromCamera( { x: 0, y: 0 }, camera );
-		// var intersects = raycaster.intersectObjects( cubes );
-		// if ( intersects.length > 0 ) {
-		// 	if ( INTERSECTED != intersects[ 0 ].object ) {
-		// 		if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-		// 		INTERSECTED = intersects[ 0 ].object;
-		// 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
-		// 		INTERSECTED.material.emissive.setHex( 0xff0000 );
-		// 	}
-		// } else {
-		// 	if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
-		// 	INTERSECTED = null;
-		// }
-		// vrControls.update();
-		// crosshair.quaternion.copy( camera.quaternion );
-		// crosshair.position.set( 0, 0, 0 );
-		// if ( INTERSECTED ) {
-		// 	crosshair.translateZ(
-		// 		-scene.position.distanceTo( INTERSECTED.position ) +
-		// 		INTERSECTED.geometry.boundingSphere.radius + 5
-		// 	);
-		// }
-		// else {
-		// 	crosshair.translateZ(-40);
-		// }
 		vrEffect.render( scene, camera );
 	};
 
