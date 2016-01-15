@@ -55,6 +55,7 @@ body{
 	var t3, camera, scene, renderer;
 	var raycaster, container, stats, vrEffect, vrControls;
 	var crosshair, INTERSECTED;
+	var charge_list, electric_field;
 	var theta = 0;
 	var camera_radius = 30;
 	var K = 1;
@@ -100,7 +101,7 @@ body{
 		// 		opacity: 0.5
 		// 	} )
 		// );
-		crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
+		// crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
 		make_axes(scene, 30, 0, 0, 0);
 		// scene.add( crosshair );
 
@@ -113,7 +114,7 @@ body{
 		charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
 		charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
 
-		make_electric_field(scene, charge_list);
+		electric_field = make_electric_field(scene, charge_list);
 
 		var fullScreenButton = document.querySelector( '.full-screen' );
 
@@ -156,13 +157,29 @@ body{
 				}
 			}
 		}
+
 		charges.forEach(function(charge) {
 			charge.contribute_to_electric_field(field);
 		});
 		field.forEach(function(F) {
 			mag = F.field.length();
 			dir = F.field.normalize();
-			make_arrow(s, F.pos, dir, mag);
+			F.arrow = make_arrow(s, F.pos, dir, mag);
+		});
+		return field;
+	}
+	function update_field(s, charges, field) {
+		field.forEach(function(F) {
+			F.field = new THREE.Vector3(0, 0, 0);
+			scene.remove(F.arrow);
+		});
+		charges.forEach(function(charge) {
+			charge.contribute_to_electric_field(field);
+		});
+		field.forEach(function(F) {
+			mag = F.field.length();
+			dir = F.field.normalize();
+			F.arrow = make_arrow(s, F.pos, dir, mag);
 		});
 	}
 
@@ -183,32 +200,49 @@ body{
 		var arrowHelper = new THREE.ArrowHelper( dir, new_orig, arrow_length, hex, arrow_length / 2, magnitude * 5);
 		// arrowHelper.cone
 		// arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex, length / 3, length / 3);
-
 		s.add( arrowHelper );
-		
+		return arrowHelper;
 	}
 
 	function PointCharge(s, x0, y0, z0, r, q) {
 		this.scene = s;
-		this.x0 = x0;
-		this.y0 = y0;
-		this.z0 = z0;
 		this.vec = new THREE.Vector3(x0, y0, z0);
 		this.radius = r;
 		this.charge = q;
 		// make_axes(scene, r * 2, x0, y0, z0);
 		this.hex = (q < 0) ? 0x0000ff : 0xff0000;
 		this.sphere = make_sphere(scene, r, x0, y0, z0, this.hex);
-		this.contribute_to_electric_field = function(field) { // where field is a 3d matrix
-			field.forEach(function(F){
-				var r = new THREE.Vector3();
-				var vec = new THREE.Vector3(x0, y0, z0);
-				r.subVectors(F.pos, vec);
-				var mag_r = r.length();
-				var e = K * q / mag_r / mag_r / mag_r;
-				r.multiplyScalar(e);
-				F.field.add(r);
-			});
+		this.contribution = null;
+		this.contribute_to_electric_field = function(field) { // where field is a list of position vectors
+			if (this.contribution == null) {
+				this.contribution = new Array(field.length);
+				field.forEach(function(F, index){
+					var r = new THREE.Vector3();
+					r.subVectors(F.pos, this.vec);
+					var mag_r = r.length();
+					var e = K * this.charge / mag_r / mag_r / mag_r;
+					r.multiplyScalar(e);
+					this.contribution[index] = r;
+					F.field.add(r);
+				}, this);
+			} else {
+				console.log('hi');
+				field.forEach(function(F, index) {
+					F.field.add(this.contribution[index]);
+				}, this)
+			}
+		}
+		this.move_up = function() {
+			this.sphere.position.z += 5;
+			this.vec.z += 5;
+			this.contribution = null;
+			update_field(scene, charge_list, electric_field);
+		}
+		this.move_down = function() {
+			this.sphere.position.z -= 5;
+			this.vec.z -= 5;
+			this.contribution = null;
+			update_field(scene, charge_list, electric_field);
 		}
 	}
 
@@ -264,8 +298,11 @@ body{
 				break;
 			case 37: // left arrow
 			case 38: // up arrow
+				charge_list[0].move_up();
+				break;
 			case 39: // right arrow
 			case 40: // down arrow
+				charge_list[0].move_down();
 		}
 	}
 	//----- Camera Functions -----//
@@ -298,11 +335,12 @@ body{
 	}
 
 	function render() {
-		theta += 0.01;
+		// theta += 0.01;
 		camera.position.y = camera_radius * Math.cos(theta);
 		camera.position.x = camera_radius * Math.sin(theta);
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
-		charge_list[0].sphere.translateZ(1);
+		// charge_list[0].sphere.translateZ(1);
+		// electric_field[0].arrow.translateZ(1);
 
 		// renderer.render(scene, camera);
 
