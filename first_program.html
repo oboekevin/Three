@@ -8,6 +8,7 @@
 	<script src="three/examples/js/effects/VREffect.js"></script>
 	<script src="three/examples/js/controls/VRControls.js"></script>
 	<script src="three/examples/js/libs/stats.min.js"></script>
+	<script src="three/examples/fonts/helvetiker_regular.typeface"></script>
 <style>
 body{
 	/* set margin to 0 and overflow to hidden, 
@@ -60,7 +61,7 @@ body{
 	var camera_radius = 30;
 	var K = 1;
 	var selected_id;
-	var P = 3;
+	var P = 5;
 	init();
 	animate();
 
@@ -105,6 +106,9 @@ body{
 		// );
 		// crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
 		make_axes(scene, 30, 0, 0, 0);
+		spx = makeTextSprite("X");
+		spx.position = new THREE.Vector3(30, 0, 0);
+		scene.add(spx);
 		// scene.add( crosshair );
 
 		raycaster = new THREE.Raycaster();
@@ -235,42 +239,31 @@ body{
 				}, this)
 			}
 		}
-		this.move_up = function() {
-			this.sphere.position.z += P;
-			this.vec.z += P;
+		this.move = function(delta) {
+			this.sphere.position.add(delta);
+			this.vec.add(delta);
 			this.contribution = null;
 			update_field(scene, charge_list, electric_field);
+		}
+		this.move_up = function() {
+			this.move(new THREE.Vector3(0, 0, P));
 		}
 		this.move_down = function() {
-			this.sphere.position.z -= P;
-			this.vec.z -= P;
-			this.contribution = null;
-			update_field(scene, charge_list, electric_field);
+			this.move(new THREE.Vector3(0, 0, -P));
 		}
 		this.move_x_forward = function() {
-			this.sphere.position.x += P;
-			this.vec.x += P;
-			this.contribution = null;
-			update_field(scene, charge_list, electric_field);
+			this.move(new THREE.Vector3(P, 0, 0));
 		}
 		this.move_y_forward = function() {
-			this.sphere.position.y += P;
-			this.vec.y += P;
-			this.contribution = null;
-			update_field(scene, charge_list, electric_field);
+			this.move(new THREE.Vector3(0, P, 0));
 		}
 		this.move_x_backward = function() {
-			this.sphere.position.x -= P;
-			this.vec.x -= P;
-			this.contribution = null;
-			update_field(scene, charge_list, electric_field);
+			this.move(new THREE.Vector3(-P, 0 ,0));
 		}
 		this.move_y_backward = function() {
-			this.sphere.position.y -= P;
-			this.vec.y -= P;
-			this.contribution = null;
-			update_field(scene, charge_list, electric_field);
-		}	}
+			this.move(new THREE.Vector3(0, -P, 0));
+		}	
+	}
 
 	function make_sphere(s, r, x0, y0, z0, hex) {
 		var s_geometry = new THREE.SphereGeometry( r, 32, 32 );
@@ -314,14 +307,90 @@ body{
 		// 		style: "normal" // normal italic
 		// }
 
-	 //    var text = new THREE.Mesh(new THREE.TextGeometry("hi"), 
-	 //    	new THREE.MeshLambertMaterial({color: 0x0000ff}));
-	 //    s.add(text);
+	    // var text = new THREE.Mesh(new THREE.TextGeometry("hi"), 
+	    // 	new THREE.MeshLambertMaterial({color: 0x0000ff}));
+	    // s.add(text);
     }
 
     function add_spoke(geometry, x, y, z, x0, y0, z0) {
 		geometry.vertices.push(new THREE.Vector3(x, y, z));
 		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
+	}
+
+	// makeTextSprite and roundRect from this source:
+	// http://stemkoski.github.io/Three.js/Sprite-Text-Labels.html
+	function makeTextSprite( message, parameters )
+	{
+		if ( parameters === undefined ) parameters = {};
+		
+		var fontface = parameters.hasOwnProperty("fontface") ? 
+			parameters["fontface"] : "Arial";
+		
+		var fontsize = parameters.hasOwnProperty("fontsize") ? 
+			parameters["fontsize"] : 18;
+		
+		var borderThickness = parameters.hasOwnProperty("borderThickness") ? 
+			parameters["borderThickness"] : 4;
+		
+		var borderColor = parameters.hasOwnProperty("borderColor") ?
+			parameters["borderColor"] : { r:0, g:0, b:0, a:1.0 };
+		
+		var backgroundColor = parameters.hasOwnProperty("backgroundColor") ?
+			parameters["backgroundColor"] : { r:255, g:255, b:255, a:1.0 };
+
+		// var spriteAlignment = THREE.SpriteAlignment.topLeft;
+			
+		var canvas = document.createElement('canvas');
+		var context = canvas.getContext('2d');
+		context.font = "Bold " + fontsize + "px " + fontface;
+	    
+		// get size data (height depends only on font size)
+		var metrics = context.measureText( message );
+		var textWidth = metrics.width;
+		
+		// background color
+		context.fillStyle   = "rgba(" + backgroundColor.r + "," + backgroundColor.g + ","
+									  + backgroundColor.b + "," + backgroundColor.a + ")";
+		// border color
+		context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + ","
+									  + borderColor.b + "," + borderColor.a + ")";
+
+		context.lineWidth = borderThickness;
+		// roundRect(context, borderThickness/2, borderThickness/2, textWidth + borderThickness, fontsize * 1.4 + borderThickness, 6);
+		// 1.4 is extra height factor for text below baseline: g,j,p,q.
+		
+		// text color
+		context.fillStyle = "rgba(0, 0, 0, 1.0)";
+
+		context.fillText( message, borderThickness, fontsize + borderThickness);
+		
+		// canvas contents will be used for a texture
+		var texture = new THREE.Texture(canvas) 
+		texture.needsUpdate = true;
+
+		var spriteMaterial = new THREE.SpriteMaterial( 
+			{ map: texture } );
+		var sprite = new THREE.Sprite( spriteMaterial );
+		sprite.scale.set(100,50,1.0);
+		return sprite;	
+	}
+
+	// function for drawing rounded rectangles
+	function roundRect(ctx, x, y, w, h, r) 
+	{
+	    ctx.beginPath();
+	    ctx.moveTo(x+r, y);
+	    ctx.lineTo(x+w-r, y);
+	    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+	    ctx.lineTo(x+w, y+h-r);
+	    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+	    ctx.lineTo(x+r, y+h);
+	    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+	    ctx.lineTo(x, y+r);
+	    ctx.quadraticCurveTo(x, y, x+r, y);
+	    ctx.closePath();
+	    ctx.fill();
+		ctx.stroke();   
 	}
 
 	window.addEventListener('keydown', key_listener, true);
