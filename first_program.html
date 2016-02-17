@@ -57,14 +57,15 @@ body{
 	var raycaster, container, stats, vrEffect, vrControls;
 	var crosshair, INTERSECTED;
 	var charge_list, electric_field;
-	var theta = 0;
-	var phi = 0;
-	var camera_radius = 30;
+	var theta = -2;
+	var phi = -1;
+	var camera_radius = 80;
 	var K = 1;
 	var selected_id;
 	var P = 5;
 	var big_x, big_y, big_z;
 	var origin;
+	var sol;
 	init();
 	animate();
 
@@ -123,10 +124,11 @@ body{
 		selected_id = 0;
 		charge_list = [];
 		charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -10));
-		charge_list.push(new PointCharge(scene, 10, 10, 0, 1, 10));
-		charge_list.push(new PointCharge(scene, -10, -10, 20, 1, 10));
-		charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
-		charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
+		// charge_list.push(new PointCharge(scene, 10, 10, 0, 1, 10));
+		// charge_list.push(new PointCharge(scene, -10, -10, 20, 1, 10));
+		// charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
+		// charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
+		sol = new Solenoid(scene, 2, origin, new THREE.Vector3(0, 0, 1), 10, 10);
 
 		electric_field = make_electric_field(scene, charge_list);
 
@@ -282,7 +284,7 @@ body{
 					F.field.add(r);
 				}, this);
 			} else {
-				console.log('hi');
+				// console.log('hi');
 				field.forEach(function(F, index) {
 					F.field.add(this.contribution[index]);
 				}, this)
@@ -314,15 +316,12 @@ body{
 		}	
 	}
 
-	function Solenoid(s, r, origin, dir, length) { 
+	function Solenoid(s, r, origin, dir, length, turns) { 
 		this.radius = r; 
 		this.origin = origin; 
 		this.dir = dir; 
 		this.length = length;
-		this.charge_density = 1;
-
-		var alpha = 0.05;
-		var beta = 0.09;
+		this.charge_density = 0.1;
 
 		var normal = dir.clone();
 		var temp = new THREE.Vector3(0, 0, 0);
@@ -342,15 +341,18 @@ body{
 
 		var pi=3.14;
 		 
-		var circle_vertices=200; //choose what you want
+		var circle_vertices=50; //choose what you want
 		var circle_vertex = new Array(circle_vertices);
 
+		var alpha = turns / circle_vertices;
+		var beta = length / circle_vertices;
+
 		//
-		var g = new THREE.Geometry();
+		this.g = new THREE.Geometry();
     	var material = new THREE.LineBasicMaterial({
 	        color: 0x0000ff
 	    });
-	    var line = new THREE.Line(g, material);
+	    var line = new THREE.Line(this.g, material);
 	    //
 
 	    var points = new Array();
@@ -379,7 +381,7 @@ body{
 		    v3 = dir.clone();
 		    v3.multiplyScalar(step * beta);
 		    v1.add(v2);  v1.add(v3); // v3 is the difference between a circle and a solenoid
-		    g.vertices.push(v1);
+		    this.g.vertices.push(v1);
 		    // so v1 is the position of this vector
 		    // now I need the electric field caused by this point
 			var d_length = 1;
@@ -387,7 +389,7 @@ body{
 			for (i = 0; i < points.length; i++) {
 				var r = new THREE.Vector3();
 				// console.log(r);
-				console.log(points[i], v1);
+				// console.log(points[i], v1);
 				r.subVectors(points[i], v1);
 				// console.log(r);
 				var mag_r = r.length();
@@ -409,6 +411,42 @@ body{
 			make_arrow(s, points[i], field[i], e, 0x00cc00);
 		}
 		s.add(line);
+		function contribute_to_electric_field(field) {
+			if(this.contribution == null){
+				this.contribution = new Array(field.length);
+				field.forEach(function(F, index) {
+					//
+				}, this);
+			} else {
+				field.forEach(function(F, index) {
+					F.field.add(this.contribution[index]);
+				}, this);
+			}
+		}
+		this.move = function(delta) {
+			this.g.position.add(delta);
+			this.origin.add(delta);
+			this.contribution = null;
+			update_field(scene, charge_list, electric_field);
+		}
+		this.move_up = function() {
+			this.move(new THREE.Vector3(0, 0, P));
+		}
+		this.move_down = function() {
+			this.move(new THREE.Vector3(0, 0, -P));
+		}
+		this.move_x_forward = function() {
+			this.move(new THREE.Vector3(P, 0, 0));
+		}
+		this.move_y_forward = function() {
+			this.move(new THREE.Vector3(0, P, 0));
+		}
+		this.move_x_backward = function() {
+			this.move(new THREE.Vector3(-P, 0 ,0));
+		}
+		this.move_y_backward = function() {
+			this.move(new THREE.Vector3(0, -P, 0));
+		}
 	}
 
 	function make_sphere(s, r, x0, y0, z0, hex) {
@@ -437,106 +475,11 @@ body{
 	    add_spoke(g, x0, y0, z0 - r, x0, y0, z0);
 
 	    s.add(line);
-
-	 //    var param = {height: 20,
-		// 		size: 70,
-		// 		hover: 30,
-		// 		curveSegments: 4,
-
-		// 		bevelThickness: 2,
-		// 		bevelSize: 1.5,
-		// 		bevelSegments: 3,
-		// 		bevelEnabled: true,
-
-		// 		font: "optimer", // helvetiker, optimer, gentilis, droid sans, droid serif
-		// 		weight: "bold", // normal bold
-		// 		style: "normal" // normal italic
-		// }
-
-	    // var text = new THREE.Mesh(new THREE.TextGeometry("hi"), 
-	    // 	new THREE.MeshLambertMaterial({color: 0x0000ff}));
-	    // s.add(text);
     }
 
     function add_spoke(geometry, x, y, z, x0, y0, z0) {
 		geometry.vertices.push(new THREE.Vector3(x, y, z));
 		geometry.vertices.push(new THREE.Vector3(x0, y0, z0));
-	}
-
-	// makeTextSprite and roundRect from this source:
-	// http://stemkoski.github.io/Three.js/Sprite-Text-Labels.html
-	function makeTextSprite( message, parameters )
-	{
-		if ( parameters === undefined ) parameters = {};
-		
-		var fontface = parameters.hasOwnProperty("fontface") ? 
-			parameters["fontface"] : "Arial";
-		
-		var fontsize = parameters.hasOwnProperty("fontsize") ? 
-			parameters["fontsize"] : 18;
-		
-		var borderThickness = parameters.hasOwnProperty("borderThickness") ? 
-			parameters["borderThickness"] : 4;
-		
-		var borderColor = parameters.hasOwnProperty("borderColor") ?
-			parameters["borderColor"] : { r:0, g:0, b:0, a:1.0 };
-		
-		var backgroundColor = parameters.hasOwnProperty("backgroundColor") ?
-			parameters["backgroundColor"] : { r:255, g:255, b:255, a:1.0 };
-
-		// var spriteAlignment = THREE.SpriteAlignment.topLeft;
-			
-		var canvas = document.createElement('canvas');
-		var context = canvas.getContext('2d');
-		context.font = "Bold " + fontsize + "px " + fontface;
-	    
-		// get size data (height depends only on font size)
-		var metrics = context.measureText( message );
-		var textWidth = metrics.width;
-		
-		// background color
-		context.fillStyle   = "rgba(" + backgroundColor.r + "," + backgroundColor.g + ","
-									  + backgroundColor.b + "," + backgroundColor.a + ")";
-		// border color
-		context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + ","
-									  + borderColor.b + "," + borderColor.a + ")";
-
-		context.lineWidth = borderThickness;
-		// roundRect(context, borderThickness/2, borderThickness/2, textWidth + borderThickness, fontsize * 1.4 + borderThickness, 6);
-		// 1.4 is extra height factor for text below baseline: g,j,p,q.
-		
-		// text color
-		context.fillStyle = "rgba(0, 0, 0, 1.0)";
-
-		context.fillText( message, borderThickness, fontsize + borderThickness);
-		
-		// canvas contents will be used for a texture
-		var texture = new THREE.Texture(canvas) 
-		texture.needsUpdate = true;
-
-		var spriteMaterial = new THREE.SpriteMaterial( 
-			{ map: texture } );
-		var sprite = new THREE.Sprite( spriteMaterial );
-		sprite.scale.set(100,50,1.0);
-		return sprite;	
-	}
-
-	// function for drawing rounded rectangles
-	function roundRect(ctx, x, y, w, h, r) 
-	{
-	    ctx.beginPath();
-	    ctx.moveTo(x+r, y);
-	    ctx.lineTo(x+w-r, y);
-	    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-	    ctx.lineTo(x+w, y+h-r);
-	    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-	    ctx.lineTo(x+r, y+h);
-	    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-	    ctx.lineTo(x, y+r);
-	    ctx.quadraticCurveTo(x, y, x+r, y);
-	    ctx.closePath();
-	    ctx.fill();
-		ctx.stroke();   
 	}
 
 	window.addEventListener('keydown', key_listener, true);
