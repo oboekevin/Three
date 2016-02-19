@@ -64,7 +64,7 @@ body{
 	var selected_id;
 	var P = 5;
 	var big_x, big_y, big_z;
-	var origin;
+	var the_origin;
 	var sol;
 	init();
 	animate();
@@ -116,19 +116,20 @@ body{
 		make_x(scene, new THREE.Vector3(30, 0, 0));
 		make_y(scene, new THREE.Vector3(0, 30, 0));
 		make_z(scene, new THREE.Vector3(0, 0, 30));
-		origin = new THREE.Vector3(0, 0, 0);
+		the_origin = new THREE.Vector3(0, 0, 0);
 		// scene.add( crosshair );
 
 		raycaster = new THREE.Raycaster();
 
 		selected_id = 0;
 		charge_list = [];
-		charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -10));
+		// charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -2));
 		// charge_list.push(new PointCharge(scene, 10, 10, 0, 1, 10));
 		// charge_list.push(new PointCharge(scene, -10, -10, 20, 1, 10));
 		// charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
 		// charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
-		sol = new Solenoid(scene, 2, origin, new THREE.Vector3(0, 0, 1), 10, 10);
+		sol = new Solenoid(scene, 2, the_origin, new THREE.Vector3(0, 0, 1), 10, 10);
+		charge_list.push(sol);
 
 		electric_field = make_electric_field(scene, charge_list);
 
@@ -318,10 +319,11 @@ body{
 
 	function Solenoid(s, r, origin, dir, length, turns) { 
 		this.radius = r; 
-		this.origin = origin; 
+		this.origin = origin.clone(); 
 		this.dir = dir; 
 		this.length = length;
 		this.charge_density = 0.1;
+		this.contribution = null;
 
 		var normal = dir.clone();
 		var temp = new THREE.Vector3(0, 0, 0);
@@ -346,30 +348,31 @@ body{
 
 		var alpha = turns / circle_vertices;
 		var beta = length / circle_vertices;
+		this.d_length = Math.sqrt(Math.pow(alpha * this.radius, 2) + beta * beta);
 
 		//
 		this.g = new THREE.Geometry();
     	var material = new THREE.LineBasicMaterial({
 	        color: 0x0000ff
 	    });
-	    var line = new THREE.Line(this.g, material);
+	    this.line = new THREE.Line(this.g, material);
 	    //
 
-	    var points = new Array();
-	    for (ra = 0; ra < 2 * this.radius; ra += 3) {
-	    	for (theta = 0; theta < 2 * pi; theta += pi / 3) {
-	    		for (z = 0; z < length * 1.5; z += 2) {
-	    			var point = new THREE.Vector3(ra * Math.cos(theta), ra * Math.sin(theta), z)
-	    			points.push(point);
-	    			// make_arrow(s, point, new THREE.Vector3(0, 0, 1), 1, 0xff0000)
-	    		}
-	    	}
-	    }
+	    // var points = new Array();
+	    // for (ra = 0; ra < 2 * this.radius; ra += 3) {
+	    // 	for (theta = 0; theta < 2 * pi; theta += pi / 3) {
+	    // 		for (z = 0; z < length * 1.5; z += 2) {
+	    // 			var point = new THREE.Vector3(ra * Math.cos(theta), ra * Math.sin(theta), z)
+	    // 			points.push(point);
+	    // 			// make_arrow(s, point, new THREE.Vector3(0, 0, 1), 1, 0xff0000)
+	    // 		}
+	    // 	}
+	    // }
 
-	    var field = new Array(points.length) // parallel array
-	    for (i = 0; i < field.length; i++) {
-	    	field[i] = new THREE.Vector3(0, 0, 0);
-	    }
+	    // var field = new Array(points.length) // parallel array
+	    // for (i = 0; i < field.length; i++) {
+	    // 	field[i] = new THREE.Vector3(0, 0, 0);
+	    // }
 
 		for (step = 0; step < circle_vertices; ++step)
 		{
@@ -384,38 +387,49 @@ body{
 		    this.g.vertices.push(v1);
 		    // so v1 is the position of this vector
 		    // now I need the electric field caused by this point
-			var d_length = 1;
-			var k = 1;
-			for (i = 0; i < points.length; i++) {
-				var r = new THREE.Vector3();
-				// console.log(r);
-				// console.log(points[i], v1);
-				r.subVectors(points[i], v1);
-				// console.log(r);
-				var mag_r = r.length();
-				// console.log(mag_r);
-				var e = k * this.charge_density * d_length / mag_r / mag_r / mag_r;
-				r.multiplyScalar(e);
-				// console.log(e);
-				field[i].add(r);
-			}
+			// var d_length = 1;
+			// var k = 1;
+			// for (i = 0; i < points.length; i++) {
+			// 	var r = new THREE.Vector3();
+			// 	// console.log(r);
+			// 	// console.log(points[i], v1);
+			// 	r.subVectors(points[i], v1);
+			// 	// console.log(r);
+			// 	var mag_r = r.length();
+			// 	// console.log(mag_r);
+			// 	var e = k * this.charge_density * d_length / mag_r / mag_r / mag_r;
+			// 	r.multiplyScalar(e);
+			// 	// console.log(e);
+			// 	field[i].add(r);
+			// }
 		}
 		// https://www.opengl.org/discussion_boards/showthread.php/124624-equation-of-a-circle-in-3D
-		console.log(field.length)
-		console.log(points.length)
-		console.log(s)
-		for (i = 0; i < field.length; i++) {
-			var e = field[i].length();
-			field[i].normalize();
-			// console.log(e, field[i])
-			make_arrow(s, points[i], field[i], e, 0x00cc00);
-		}
-		s.add(line);
-		function contribute_to_electric_field(field) {
+		// console.log(field.length)
+		// console.log(points.length)
+		// console.log(s)
+		// for (i = 0; i < field.length; i++) {
+		// 	var e = field[i].length();
+		// 	field[i].normalize();
+		// 	// console.log(e, field[i])
+		// 	make_arrow(s, points[i], field[i], e, 0x00cc00);
+		// }
+		s.add(this.line);
+		this.contribute_to_electric_field = function(field) {
 			if(this.contribution == null){
 				this.contribution = new Array(field.length);
 				field.forEach(function(F, index) {
-					//
+					var E = new THREE.Vector3(0, 0, 0);
+					this.g.vertices.forEach(function(vertex, v_index) {
+						var r = new THREE.Vector3();
+						var pos = vertex.clone(); pos.add(this.origin);
+						r.subVectors(F.pos, pos);
+						var mag_r = r.length();
+						var e = K * this.charge_density * this.d_length / mag_r / mag_r / mag_r;
+						r.multiplyScalar(e);
+						E.add(r);
+					}, this)
+					this.contribution[index] = E;
+					F.field.add(E);
 				}, this);
 			} else {
 				field.forEach(function(F, index) {
@@ -424,7 +438,7 @@ body{
 			}
 		}
 		this.move = function(delta) {
-			this.g.position.add(delta);
+			this.line.position.add(delta);
 			this.origin.add(delta);
 			this.contribution = null;
 			update_field(scene, charge_list, electric_field);
@@ -571,10 +585,10 @@ body{
 		camera.position.y = camera_radius * Math.cos(theta) * Math.sin(phi);
 		camera.position.x = camera_radius * Math.sin(theta) * Math.sin(phi);
 		camera.position.z = camera_radius * Math.cos(phi);
-		camera.lookAt(origin);
+		camera.lookAt(the_origin);
 
 		big_x.lookAt(camera.position);
-		big_y.lookAt(origin);
+		big_y.lookAt(the_origin);
 		// big_x.rotation.x += 1.57;
 
 		// charge_list[0].sphere.translateZ(1);
