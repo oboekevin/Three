@@ -100,36 +100,25 @@ body{
 		light.position.set( 10, 10, 80 );
 		scene.add( light );
 
-		// crosshair = new THREE.Mesh(
-		// 	new THREE.RingGeometry( 0.5, 1, 32 ),
-		// 	new THREE.MeshBasicMaterial( {
-		// 		color: 0x00bb00,
-		// 		transparent: true,
-		// 		opacity: 0.5
-		// 	} )
-		// );
-		// crosshair = make_sphere(scene, 0.3, 0, 0, 0, 0x00bb00);
 		make_axes(scene, 30, 0, 0, 0);
-		// spx = makeTextSprite("X");
-		// spx.position.set(30, 0, 0);
-		// scene.add(spx);
+
 		make_x(scene, new THREE.Vector3(30, 0, 0));
 		make_y(scene, new THREE.Vector3(0, 30, 0));
 		make_z(scene, new THREE.Vector3(0, 0, 30));
 		the_origin = new THREE.Vector3(0, 0, 0);
-		// scene.add( crosshair );
 
 		raycaster = new THREE.Raycaster();
 
 		selected_id = 0;
 		charge_list = [];
-		// charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -2));
+		charge_list.push(new PointCharge(scene, -10, -10, 0, 1, -2));
 		// charge_list.push(new PointCharge(scene, 10, 10, 0, 1, 10));
 		// charge_list.push(new PointCharge(scene, -10, -10, 20, 1, 10));
 		// charge_list.push(new PointCharge(scene, -10, -10, -20, 1, 10));
 		// charge_list.push(new PointCharge(scene, -25, -25, 3, 1, -5));
 		sol = new Solenoid(scene, 2, the_origin, new THREE.Vector3(0, 0, 1), 10, 10);
 		charge_list.push(sol);
+		charge_list[selected_id].select(true);
 
 		electric_field = make_electric_field(scene, charge_list);
 
@@ -285,7 +274,6 @@ body{
 					F.field.add(r);
 				}, this);
 			} else {
-				// console.log('hi');
 				field.forEach(function(F, index) {
 					F.field.add(this.contribution[index]);
 				}, this)
@@ -314,10 +302,19 @@ body{
 		}
 		this.move_y_backward = function() {
 			this.move(new THREE.Vector3(0, -P, 0));
-		}	
+		}
+		this.select = function(on) {
+			if (on) {
+				this.sphere.material.color.setHex(0x00ff00);
+			} else {
+				this.sphere.material.color.setHex(this.hex);
+			}
+		}
 	}
 
 	function Solenoid(s, r, origin, dir, length, turns) { 
+		this.default_color = 0x0000ff;
+		this.selected_color = 0x00ff00;
 		this.radius = r; 
 		this.origin = origin.clone(); 
 		this.dir = dir; 
@@ -350,29 +347,11 @@ body{
 		var beta = length / circle_vertices;
 		this.d_length = Math.sqrt(Math.pow(alpha * this.radius, 2) + beta * beta);
 
-		//
 		this.g = new THREE.Geometry();
     	var material = new THREE.LineBasicMaterial({
-	        color: 0x0000ff
+	        color: this.default_color
 	    });
 	    this.line = new THREE.Line(this.g, material);
-	    //
-
-	    // var points = new Array();
-	    // for (ra = 0; ra < 2 * this.radius; ra += 3) {
-	    // 	for (theta = 0; theta < 2 * pi; theta += pi / 3) {
-	    // 		for (z = 0; z < length * 1.5; z += 2) {
-	    // 			var point = new THREE.Vector3(ra * Math.cos(theta), ra * Math.sin(theta), z)
-	    // 			points.push(point);
-	    // 			// make_arrow(s, point, new THREE.Vector3(0, 0, 1), 1, 0xff0000)
-	    // 		}
-	    // 	}
-	    // }
-
-	    // var field = new Array(points.length) // parallel array
-	    // for (i = 0; i < field.length; i++) {
-	    // 	field[i] = new THREE.Vector3(0, 0, 0);
-	    // }
 
 		for (step = 0; step < circle_vertices; ++step)
 		{
@@ -385,34 +364,8 @@ body{
 		    v3.multiplyScalar(step * beta);
 		    v1.add(v2);  v1.add(v3); // v3 is the difference between a circle and a solenoid
 		    this.g.vertices.push(v1);
-		    // so v1 is the position of this vector
-		    // now I need the electric field caused by this point
-			// var d_length = 1;
-			// var k = 1;
-			// for (i = 0; i < points.length; i++) {
-			// 	var r = new THREE.Vector3();
-			// 	// console.log(r);
-			// 	// console.log(points[i], v1);
-			// 	r.subVectors(points[i], v1);
-			// 	// console.log(r);
-			// 	var mag_r = r.length();
-			// 	// console.log(mag_r);
-			// 	var e = k * this.charge_density * d_length / mag_r / mag_r / mag_r;
-			// 	r.multiplyScalar(e);
-			// 	// console.log(e);
-			// 	field[i].add(r);
-			// }
 		}
-		// https://www.opengl.org/discussion_boards/showthread.php/124624-equation-of-a-circle-in-3D
-		// console.log(field.length)
-		// console.log(points.length)
-		// console.log(s)
-		// for (i = 0; i < field.length; i++) {
-		// 	var e = field[i].length();
-		// 	field[i].normalize();
-		// 	// console.log(e, field[i])
-		// 	make_arrow(s, points[i], field[i], e, 0x00cc00);
-		// }
+
 		s.add(this.line);
 		this.contribute_to_electric_field = function(field) {
 			if(this.contribution == null){
@@ -460,6 +413,13 @@ body{
 		}
 		this.move_y_backward = function() {
 			this.move(new THREE.Vector3(0, -P, 0));
+		}
+		this.select = function(on) {
+			if (on) {
+				this.line.material.color.setHex(this.selected_color);
+			} else {
+				this.line.material.color.setHex(this.default_color);
+			}
 		}
 	}
 
@@ -568,10 +528,14 @@ body{
 		camera_radius += 5;
 	}
 	function next_charge() {
+		charge_list[selected_id].select(false);
 		selected_id = (selected_id + 1) % charge_list.length;
+		charge_list[selected_id].select(true);
 	}
 	function previous_charge() {
+		charge_list[selected_id].select(false);
 		selected_id = (selected_id - 1) % charge_list.length;
+		charge_list[selected_id].select(true);
 	}
 
 	function animate() {
