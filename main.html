@@ -171,14 +171,15 @@ body{
 		s.add(obj);
 		big_x = obj;
 		big_x.up = new THREE.Vector3(0, 0, 1);
+		big_x.lookAt(new THREE.Vector3(pos.x, pos.y + 10, pos.z))
 	}
 	function make_y(s, pos) {
-		var box1 = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), new THREE.MeshLambertMaterial({color: 0x000000}));
+		var box1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.5, 1), new THREE.MeshLambertMaterial({color: 0x000000}));
 		box1.rotation.y = 0.85;
 		var box2 = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 1), new THREE.MeshLambertMaterial({color: 0x000000}));
-		box2.rotation.y = -0.85;
+		box2.rotation.y = -0.8;
 		box1.position.set(0, 0, 0);
-		box2.position.set(1, 0, 1);
+		box2.position.set(0.9, 0, 0.9);
 		big_y = new THREE.Object3D();
 		big_y.add(box1);
 		big_y.add(box2);
@@ -191,12 +192,16 @@ body{
 		box1.rotation.y = 0.85;
 		var box2 = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), new THREE.MeshLambertMaterial({color: 0x000000}));
 		var box3 = new THREE.Mesh(new THREE.BoxGeometry(3, 0.5, 1), new THREE.MeshLambertMaterial({color: 0x000000}));
-		box1.position.set(pos.x, pos.y, pos.z);
-		box2.position.set(pos.x + 0.18, pos.y, pos.z + 1.2);
-		box3.position.set(pos.x - 0.18, pos.y, pos.z - 1.2);
-		s.add(box1);
-		s.add(box2);
-		s.add(box3);
+		box1.position.set(0, 0, 0);
+		box2.position.set(0.18, 0, 1.2);
+		box3.position.set(0.18, 0, - 1.2);
+		big_z = new THREE.Object3D();
+		big_z.add(box1);
+		big_z.add(box2);
+		big_z.add(box3);
+		big_z.position.copy(pos)
+		big_z.up = new THREE.Vector3(0, 0, 1)
+		s.add(big_z);
 	}
 
 	function make_electric_field(s, charges) {
@@ -553,9 +558,6 @@ body{
 		camera.position.x = camera_radius * Math.sin(theta) * Math.sin(phi);
 		camera.position.z = camera_radius * Math.cos(phi);
 		camera.lookAt(the_origin);
-
-		big_x.lookAt(camera.position);
-		big_y.lookAt(the_origin);
 
 		// renderer.render(scene, camera);
 
