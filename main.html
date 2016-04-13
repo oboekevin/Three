@@ -70,6 +70,8 @@ body{
 	animate();
 
 	function init() {
+		console.log(navigator.getGamepads());
+
 		container = document.createElement( 'div' );
 		document.body.appendChild( container );
 
@@ -146,6 +148,17 @@ body{
 
 		window.addEventListener( 'resize', onWindowResize, false );
 	}
+
+	function gamepadConnected(evt)
+	{
+		console.log(evt); 
+	}
+	window.addEventListener("gamepadconnected", gamepadConnected);
+	function gamepadDisconnected(evt)
+	{
+		console.log(evt); 
+	}
+	window.addEventListener("gamepaddisconnected", gamepadDisconnected);
 
 	function onWindowResize() {
 		camera.aspect = window.innerWidth / window.innerHeight;
@@ -467,7 +480,7 @@ body{
 
 	window.addEventListener('keydown', key_listener, true);
 	function key_listener(event) {
-		console.log(event.keyCode);
+		// console.log(event.keyCode);
 
 		switch(event.keyCode) {
 			case 87: // w
