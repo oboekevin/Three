@@ -354,7 +354,7 @@ body{
 
 		var alpha = turns / circle_vertices;
 		var beta = length / circle_vertices;
-		this.d_length = Math.sqrt(Math.pow(alpha * this.radius, 2) + beta * beta);
+		this.d_length = Math.sqrt(Math.pow(2 * pi * alpha * this.radius, 2) + beta * beta);
 
 		this.g = new THREE.Geometry();
     	var material = new THREE.LineBasicMaterial({
