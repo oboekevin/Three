@@ -1,6 +1,6 @@
 ---
 layout: page
-permalink: /three/
+permalink: /ocuphysics/
 ---
 
 ## OcuPhysics
