@@ -50,6 +50,8 @@ body{
 		<div class="button full-screen">Start VR Mode</div>
 	</div>
 
+	<div id="gapepaddisplay"></div>
+
 
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
@@ -70,6 +72,8 @@ body{
 	animate();
 
 	function init() {
+		console.log(navigator.getGamepads());
+
 		container = document.createElement( 'div' );
 		document.body.appendChild( container );
 
@@ -146,6 +150,124 @@ body{
 
 		window.addEventListener( 'resize', onWindowResize, false );
 	}
+
+	function gamepadConnected(evt)
+	{
+		console.log(evt); 
+	}
+	window.addEventListener("gamepadconnected", gamepadConnected);
+	function gamepadDisconnected(evt)
+	{
+		console.log(evt); 
+	}
+	window.addEventListener("gamepaddisconnected", gamepadDisconnected);
+	function reportOnGamepad() {
+        var gp = navigator.getGamepads()[0];
+        if (! gp)
+        	return
+
+        var html = "";
+            html += "id: "+gp.id+"<br/>";
+ 
+        for(var i=0;i<gp.buttons.length;i++) {
+            html+= "Button "+(i+1)+": ";
+            if(gp.buttons[i].pressed) html+= " pressed";
+            html+= "<br/>";
+        }
+ 
+        for(var i=0;i<gp.axes.length; i+=2) {
+            html+= "Stick "+(Math.ceil(i/2)+1)+": "+gp.axes[i]+","+gp.axes[i+1]+"<br/>";
+    	}
+    	document.getElementById("gapepaddisplay").innerHTML = html;
+    }  
+    function doThingsWithButtons() {
+    	var gp = navigator.getGamepads()[0];
+    	if (! gp)
+    		return
+
+    	// A
+    	if(gp.buttons[0].pressed) {
+    		//
+    	}
+    	// B
+    	if(gp.buttons[1].pressed) {
+    		//
+    	}
+    	// X
+    	if(gp.buttons[2].pressed) {
+    		//
+    	}
+    	// Y
+    	if(gp.buttons[3].pressed) {
+    		//
+    	}
+    	// LB
+    	if(gp.buttons[4].pressed) {
+    		previous_charge();
+    	}
+    	// RB
+    	if(gp.buttons[5].pressed) {
+    		next_charge();
+    	}
+    	// LT
+    	if(gp.buttons[6].pressed) {
+    		previous_charge();
+    	}
+    	// RT
+    	if(gp.buttons[7].pressed) {
+    		next_charge();
+    	}
+    	// then LT, RT, back, start, left stick, right stick
+    	// arrow pad
+    	// up
+    	if(gp.buttons[12].pressed) {
+    		zoom_in();
+    	}
+    	// down
+    	if(gp.buttons[13].pressed) {
+    		zoom_out();
+    	}
+    	// left
+    	if(gp.buttons[14].pressed) {
+    		//
+    	}
+    	// right
+    	if(gp.buttons[15].pressed) {
+    		//
+    	}
+    	
+    	// now sticks
+    	// gp.axes[i] gives a decimal in [-1, 1]
+    	// 0 - left x-axis
+    	// 1 - left y-axis
+    	if(gp.axes[0] < -0.8) {
+    		look_left();
+    	}
+    	if(gp.axes[0] > 0.8) {
+    		look_right();
+    	}
+    	if(gp.axes[1] < -0.8) {
+    		circle_up(true);
+    	}
+    	if(gp.axes[1] > 0.8) {
+    		circle_up(false);
+    	}
+
+    	// 2 - right x-axis
+    	// 3 - right y-axis
+    	if(gp.axes[2] < -0.8) {
+    		charge_list[selected_id].move_x_forward();
+    	}
+    	if(gp.axes[2] > 0.8) {
+    		charge_list[selected_id].move_x_backward();
+    	}
+    	if(gp.axes[3] < -0.8) {
+    		charge_list[selected_id].move_y_backward();
+    	}
+    	if(gp.axes[3] > 0.8) {
+    		charge_list[selected_id].move_y_forward();
+    	}
+    }
 
 	function onWindowResize() {
 		camera.aspect = window.innerWidth / window.innerHeight;
@@ -467,7 +589,7 @@ body{
 
 	window.addEventListener('keydown', key_listener, true);
 	function key_listener(event) {
-		console.log(event.keyCode);
+		// console.log(event.keyCode);
 
 		switch(event.keyCode) {
 			case 87: // w
@@ -537,6 +659,7 @@ body{
 		camera_radius += 5;
 	}
 	function next_charge() {
+		console.log("called")
 		charge_list[selected_id].select(false);
 		selected_id = pos_mod(selected_id + 1, charge_list.length);
 		charge_list[selected_id].select(true);
@@ -558,6 +681,10 @@ body{
 		camera.position.x = camera_radius * Math.sin(theta) * Math.sin(phi);
 		camera.position.z = camera_radius * Math.cos(phi);
 		camera.lookAt(the_origin);
+
+		// reportOnGamepad();
+
+		doThingsWithButtons();
 
 		// renderer.render(scene, camera);
 
