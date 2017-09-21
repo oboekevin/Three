@@ -18,3 +18,5 @@ The goal of this project is to model various electrically-charged objects and th
 + [Point charges]({{ site.baseurl }}{% link _pages/Three/main.html %})
 + [Charged solenoids]({{ site.baseurl }}{% link _pages/Three/solenoids.html %})
 + [Magnetic solenoids]({{ site.baseurl }}{% link _pages/Three/magnetic_solenoid.html %})
+
+## [Static samples]({{ site.baseurl }}{% link _pages/Three/picture_tour.html %})
